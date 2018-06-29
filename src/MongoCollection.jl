@@ -1,25 +1,23 @@
-using Compat
-
-type MongoCollection
-    _wrap_::Ptr{Void}
+mutable struct MongoCollection
+    _wrap_::Ptr{Nothing}
     client::MongoClient
-    db::AbstractString
-    name::AbstractString
+    db::String
+    name::String
 
     MongoCollection(client::MongoClient, db::AbstractString, name::AbstractString) = begin
-        dbCStr = String(db)
-        nameCStr = String(name)
+        dbCStr = string(db)
+        nameCStr = string(name)
         collection = new(
             ccall(
                 (:mongoc_client_get_collection, libmongoc),
-                Ptr{Void}, (Ptr{Void}, Ptr{UInt8}, Ptr{UInt8}),
+                Ptr{Nothing}, (Ptr{Nothing}, Ptr{UInt8}, Ptr{UInt8}),
                 client._wrap_, dbCStr, nameCStr
                 ),
             client,
             db,
             name
             )
-        finalizer(collection, destroy)
+        finalizer(destroy, collection)
         return collection
     end
 end
@@ -28,7 +26,7 @@ export MongoCollection
 show(io::IO, collection::MongoCollection) = begin
     nameCStr = ccall(
         (:mongoc_collection_get_name, libmongoc),
-        Ptr{UInt8}, (Ptr{Void},),
+        Ptr{UInt8}, (Ptr{Nothing},),
         collection._wrap_
         )
     name = unsafe_string(nameCStr)
@@ -52,7 +50,7 @@ insert(
     bsonError = BSONError()
     ccall(
         (:mongoc_collection_insert, libmongoc),
-        Bool, (Ptr{Void}, Cint, Ptr{Void}, Ptr{Void}, Ptr{UInt8}),
+        Bool, (Ptr{Nothing}, Cint, Ptr{Nothing}, Ptr{Nothing}, Ptr{UInt8}),
         collection._wrap_,
         flags,
         document._wrap_,
@@ -64,7 +62,7 @@ insert(
 end
 insert(
     collection::MongoCollection,
-    dict::Associative;
+    dict::AbstractDict;
     flags::Int = MongoInsertFlags.None
     ) = insert(collection, BSONObject(dict), flags=flags)
 insert(
@@ -90,7 +88,7 @@ update(
     bsonError = BSONError()
     ccall(
         (:mongoc_collection_update, libmongoc),
-        Bool, (Ptr{Void}, Cint, Ptr{Void}, Ptr{Void}, Ptr{Void}, Ptr{UInt8}),
+        Bool, (Ptr{Nothing}, Cint, Ptr{Nothing}, Ptr{Nothing}, Ptr{Nothing}, Ptr{UInt8}),
         collection._wrap_,
         flags,
         selector._wrap_,
@@ -101,8 +99,8 @@ update(
 end
 update(
     collection::MongoCollection,
-    selector::Associative,
-    change::Associative;
+    selector::AbstractDict,
+    change::AbstractDict;
     flags::Int = MongoUpdateFlags.None
     ) = update(
         collection,
@@ -137,7 +135,7 @@ Base.find(
     ) = begin
     result = ccall(
         (:mongoc_collection_find, libmongoc),
-        Ptr{Void}, (Ptr{Void}, Cint, UInt32, UInt32, UInt32, Ptr{Void}, Ptr{Void}, Ptr{Void}),
+        Ptr{Nothing}, (Ptr{Nothing}, Cint, UInt32, UInt32, UInt32, Ptr{Nothing}, Ptr{Nothing}, Ptr{Nothing}),
         collection._wrap_,
         flags,
         skip,
@@ -152,8 +150,8 @@ Base.find(
 end
 Base.find(
     collection::MongoCollection,
-    selector::Associative,
-    fields::Associative;
+    selector::AbstractDict,
+    fields::AbstractDict;
     skip::Int = 0,
     limit::Int = 0,
     batch_size::Int = 0,
@@ -177,7 +175,7 @@ Base.find(
     ) = begin
     result = ccall(
         (:mongoc_collection_find, libmongoc),
-        Ptr{Void}, (Ptr{Void}, Cint, UInt32, UInt32, UInt32, Ptr{Void}, Ptr{Void}, Ptr{Void}),
+        Ptr{Nothing}, (Ptr{Nothing}, Cint, UInt32, UInt32, UInt32, Ptr{Nothing}, Ptr{Nothing}, Ptr{Nothing}),
         collection._wrap_,
         flags,
         skip,
@@ -192,7 +190,7 @@ Base.find(
 end
 Base.find(
     collection::MongoCollection,
-    selector::Associative;
+    selector::AbstractDict;
     skip::Int = 0,
     limit::Int = 0,
     batch_size::Int = 0,
@@ -214,14 +212,14 @@ export find
 Base.count(
     collection::MongoCollection,
     queryBSON::BSONObject;
-    skip::Int64 = 0,
-    limit::Int64 = 0,
+    skip::Int = 0,
+    limit::Int = 0,
     flags::Int = MongoQueryFlags.None
     ) = begin
     bsonError = BSONError()
     result = ccall(
         (:mongoc_collection_count, libmongoc),
-        Int64, (Ptr{Void}, Cint, Ptr{Void}, Int64, Int64, Ptr{Void}, Ptr{UInt8}),
+        Int64, (Ptr{Nothing}, Cint, Ptr{Nothing}, Int64, Int64, Ptr{Nothing}, Ptr{UInt8}),
         collection._wrap_,
         flags,
         queryBSON._wrap_,
@@ -235,9 +233,9 @@ Base.count(
 end
 Base.count(
     collection::MongoCollection,
-    query::Associative;
-    skip::Int64 = 0,
-    limit::Int64 = 0,
+    query::AbstractDict;
+    skip::Int = 0,
+    limit::Int = 0,
     flags::Int = MongoQueryFlags.None
     ) = count(
         collection,
@@ -265,7 +263,7 @@ delete(
     bsonError = BSONError()
     result = ccall(
         (:mongoc_collection_delete, libmongoc),
-        Bool, (Ptr{Void}, Cint, Ptr{Void}, Ptr{Void}, Ptr{UInt8}),
+        Bool, (Ptr{Nothing}, Cint, Ptr{Nothing}, Ptr{Nothing}, Ptr{UInt8}),
         collection._wrap_,
         flags,
         selector._wrap_,
@@ -277,7 +275,7 @@ delete(
 end
 delete(
     collection::MongoCollection,
-    selector::Associative;
+    selector::AbstractDict;
     flags::Int = MongoDeleteFlags.None
     ) = delete(
         collection,
@@ -291,6 +289,6 @@ export delete
 destroy(collection::MongoCollection) =
     ccall(
         (:mongoc_collection_destroy, libmongoc),
-        Void, (Ptr{Void},),
+        Nothing, (Ptr{Nothing},),
         collection._wrap_
         )

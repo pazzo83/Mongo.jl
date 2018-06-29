@@ -1,20 +1,18 @@
-using Compat
-
-type MongoClient
-    uri::AbstractString
-    _wrap_::Ptr{Void}
+mutable struct MongoClient
+    uri::String
+    _wrap_::Ptr{Nothing}
 
     MongoClient(uri::AbstractString) = begin
-        uriCStr = String(uri)
+        uriCStr = string(uri)
         client = new(
             uri,
             ccall(
                 (:mongoc_client_new, libmongoc),
-                Ptr{Void}, (Ptr{UInt8}, ),
+                Ptr{Nothing}, (Ptr{UInt8}, ),
                 uriCStr
                 )
             )
-        finalizer(client, destroy)
+        finalizer(destroy, client)
         return client
     end
 
@@ -44,7 +42,7 @@ command_simple(
     bsonError = BSONError() # bson_error_t
     ccall(
         (:mongoc_client_command_simple, libmongoc),
-        Bool, (Ptr{Void}, Ptr{UInt8}, Ptr{Void}, Ptr{Void}, Ptr{Void}, Ptr{UInt8}),
+        Bool, (Ptr{Nothing}, Ptr{UInt8}, Ptr{Nothing}, Ptr{Nothing}, Ptr{Nothing}, Ptr{UInt8}),
         client._wrap_,
         dbCStr,
         command._wrap_,
@@ -79,6 +77,6 @@ export command_simple
 destroy(client::MongoClient) =
     ccall(
         (:mongoc_client_destroy, libmongoc),
-        Void, (Ptr{Void},),
+        Nothing, (Ptr{Nothing},),
         client._wrap_
         )
