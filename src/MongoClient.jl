@@ -55,7 +55,7 @@ end
 command_simple(
     client::MongoClient,
     db_name::AbstractString,
-    command::Associative
+    command::AbstractDict
     ) = command_simple(
         client,
         db_name,

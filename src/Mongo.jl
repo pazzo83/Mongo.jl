@@ -14,10 +14,10 @@ import Base.show,
 
 ccall(
     (:mongoc_init, libmongoc),
-    Void, ()
+    Nothing, ()
     )
 atexit() do
-    ccall((:mongoc_cleanup, libmongoc), Void, ())
+    ccall((:mongoc_cleanup, libmongoc), Nothing, ())
 end
 
 const NakedDict = Union{Pair,Tuple}

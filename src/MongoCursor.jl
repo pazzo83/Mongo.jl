@@ -27,12 +27,12 @@ done(cursor::MongoCursor, state::Nothing) = begin
         (:mongoc_cursor_next, libmongoc),
         Bool, (Ptr{Nothing}, Ptr{Ptr{Nothing}}),
         cursor._wrap_,
-        Array{Ptr{Nothing}}(1)
+        Array{Ptr{Nothing}}(undef, 1)
         )
 end
 export done
 
-Base.iteratorsize(::Type{MongoCursor}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{MongoCursor}) = Base.SizeUnknown()
 Base.eltype(::Type{MongoCursor}) = BSONObject
 
 destroy(collection::MongoCursor) =
